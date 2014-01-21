@@ -25,6 +25,11 @@
 #define HT1632_COMMON_8PMOS  0x28
 #define HT1632_COMMON_16PMOS  0x2C
 
+#define PANEL_TYPE 1
+// panel types
+// 0 -- Adafruit HT1632 24x16 LED MATRIX
+// 1 -- Super Led Matrix 48x32 LED MATRIX SHIELD
+
 class HT1632 {
 
  public:
@@ -48,6 +53,7 @@ class HT1632 {
   int8_t _data, _cs, _wr, _rd;
   uint8_t ledmatrix[48];     // 16 * 24 / 8
   void sendcommand(uint8_t c);
+  void sendcommand2(uint8_t c, uint8_t cs);
   void writedata(uint16_t d, uint8_t bits);
   void writeRAM(uint8_t addr, uint8_t data);
 };
@@ -73,10 +79,11 @@ class HT1632LEDMatrix : public Print {
   void clrPixel(uint8_t x, uint8_t y);
   void setPixel(uint8_t x, uint8_t y);
   void drawPixel(uint8_t x, uint8_t y, uint8_t color);
+  
 
   void drawLine(int8_t x0, int8_t y0, int8_t x1, int8_t y1, uint8_t color);
   void drawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color);
-  void fillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color);
+  void fillRect(int8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color);
   void drawCircle(uint8_t x0, uint8_t y0, uint8_t r, uint8_t color);
   void fillCircle(uint8_t x0, uint8_t y0, uint8_t r, uint8_t color);
 

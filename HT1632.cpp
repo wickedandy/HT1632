@@ -46,8 +46,14 @@ HT1632LEDMatrix::HT1632LEDMatrix(uint8_t data, uint8_t wr,
   matrices[2] = HT1632(data, wr, cs3);
   matrices[3] = HT1632(data, wr, cs4);
   matrixNum  = 4;
+if(PANEL_TYPE == 0){
   _width = 24 * matrixNum;
   _height = 16;
+  }
+ else if (PANEL_TYPE == 1){
+  _width = 48;
+  _height = 32;  
+  }
 }
 
 
@@ -59,15 +65,19 @@ void HT1632LEDMatrix::clrPixel(uint8_t x, uint8_t y) {
 }
 
 void HT1632LEDMatrix::drawPixel(uint8_t x, uint8_t y, uint8_t color) {
+
   if (y >= _height) return;
   if (x >= _width) return;
-
+  
   uint8_t m;
+  
   // figure out which matrix controller it is
-  m = x / 24;
+  m = x / 24;  
   x %= 24;
-
+  
   uint16_t i;
+      
+if(PANEL_TYPE == 0){ //Adafruit 32x24 LED MATRIX
 
   if (x < 8) {
     i = 7;
@@ -84,12 +94,30 @@ void HT1632LEDMatrix::drawPixel(uint8_t x, uint8_t y, uint8_t color) {
     y = (y-8) * 2 + 1;
   } 
 
-  i += y * 8;
+   i += y * 8;
+  }
+ else if (PANEL_TYPE == 1){ // Super Led 48x32 LED MATRIX SHIELD
+
+  if (y>15){
+   m += 2;
+   y -= 16;
+  }
+
+  if(y<8){
+    i = (x << 4)+7;
+    i -= y;
+   } else if (y<16){
+    i = x << 4; 
+    i += (15-y)+8;
+   }
+}
+
 
   if (color) 
     matrices[m].setPixel(i);
   else
     matrices[m].clrPixel(i);
+ 
 }
 
 
@@ -188,7 +216,7 @@ void HT1632LEDMatrix::drawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h,
 }
 
 // fill a rectangle
-void HT1632LEDMatrix::fillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, 
+void HT1632LEDMatrix::fillRect(int8_t x, uint8_t y, uint8_t w, uint8_t h, 
 		      uint8_t color) {
   for (uint8_t i=x; i<x+w; i++) {
     for (uint8_t j=y; j<y+h; j++) {
@@ -354,6 +382,7 @@ void HT1632::begin(uint8_t type) {
     digitalWrite(_rd, HIGH);
   }
 
+if (PANEL_TYPE == 0){
   sendcommand(HT1632_SYS_EN);
   sendcommand(HT1632_LED_ON);
   sendcommand(HT1632_BLINK_OFF);
@@ -362,8 +391,29 @@ void HT1632::begin(uint8_t type) {
   sendcommand(type);
   sendcommand(HT1632_PWM_CONTROL | 0xF);
   
+  }
+else if (PANEL_TYPE == 1){
+  sendcommand(HT1632_SYS_DIS);
+  sendcommand(HT1632_LED_OFF);
+  sendcommand(HT1632_BLINK_OFF);
+  sendcommand2(HT1632_MASTER_MODE,4);
+  sendcommand2(HT1632_INT_RC,4);
+  sendcommand2(HT1632_SLAVE_MODE,5);
+  sendcommand2(HT1632_EXT_CLK,5);
+  sendcommand2(HT1632_SLAVE_MODE,6);
+  sendcommand2(HT1632_EXT_CLK,6);
+  sendcommand2(HT1632_SLAVE_MODE,7);
+  sendcommand2(HT1632_EXT_CLK,7);
+  sendcommand(type);
+  sendcommand(HT1632_SYS_EN);
+  sendcommand(HT1632_LED_ON);
+  sendcommand(HT1632_PWM_CONTROL | 0xF);
+
+}
+
   WIDTH = 24;
   HEIGHT = 16;
+
 }
 
 void HT1632::setBrightness(uint8_t pwm) {
@@ -471,6 +521,17 @@ void HT1632::sendcommand(uint8_t cmd) {
   digitalWrite(_cs, HIGH);  
 }
 
+void HT1632::sendcommand2(uint8_t cmd, uint8_t cs) {
+  uint16_t data = 0;
+  data = HT1632_COMMAND;
+  data <<= 8;
+  data |= cmd;
+  data <<= 1;
+  
+  digitalWrite(cs, LOW);
+  writedata(data, 12);
+  digitalWrite(cs, HIGH);  
+}
 
 void HT1632::fillScreen() {
   for (uint8_t i=0; i<(WIDTH*HEIGHT/8); i++) {
